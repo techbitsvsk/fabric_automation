@@ -1,0 +1,42 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+local.settings.json
+
+# Virtual environments
+fabric_mvp/
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Development tooling
+.vscode/
+.idea/
+*.code-workspace
+
+# Tests (not needed in Function App bundle)
+tests/
+
+# CI/CD and infrastructure (deployed separately)
+.github/
+infra/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+
+# Local development
+Dockerfile
+docker-compose*.yml

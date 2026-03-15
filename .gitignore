@@ -1,0 +1,204 @@
+# =============================================================================
+# Fabric Control Plane — .gitignore
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# SECRETS — never commit these
+# .env is intentionally listed here: it holds real credentials
+# Use .env.example (committed) as the safe template
+# -----------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+local.settings.json
+
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# pyenv
+.python-version
+
+
+# -----------------------------------------------------------------------------
+# Virtual environments
+# Any folder that looks like a venv is excluded.
+# The project venv is named fabric_mvp — covered by the wildcard below.
+# -----------------------------------------------------------------------------
+fabric_mvp/
+.venv/
+.venv*/
+venv/
+venv*/
+env/
+env*/
+ENV/
+.Python
+
+
+# -----------------------------------------------------------------------------
+# Testing & coverage
+# -----------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+nosetests.xml
+test-results/
+
+
+# -----------------------------------------------------------------------------
+# Azure Functions — local & build artifacts
+# -----------------------------------------------------------------------------
+# Local development storage emulator data
+.azurite/
+
+# Functions runtime artifacts
+bin/
+obj/
+.python_packages/
+
+# Deployment zip archives
+*.zip
+deploy.zip
+
+# Azure Functions publish output
+publish/
+
+
+# -----------------------------------------------------------------------------
+# Azure CLI & credentials
+# -----------------------------------------------------------------------------
+.azure/
+azure.json
+azureauth.json
+
+
+# -----------------------------------------------------------------------------
+# Infrastructure — generated / sensitive outputs
+# Bicep compiled ARM templates and parameter files with real values
+# -----------------------------------------------------------------------------
+*.azuredeploy.json
+infra/*.parameters.*.json
+!infra/main.parameters.json
+
+
+# -----------------------------------------------------------------------------
+# IDE — VS Code
+# Keep launch.json and extensions.json (useful to share with the team).
+# Exclude settings.json (contains machine-specific paths).
+# -----------------------------------------------------------------------------
+.vscode/settings.json
+.vscode/*.code-workspace
+.vscode/.ropeproject
+
+
+# -----------------------------------------------------------------------------
+# IDE — JetBrains (PyCharm, IntelliJ)
+# -----------------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+
+# -----------------------------------------------------------------------------
+# IDE — other
+# -----------------------------------------------------------------------------
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.spyderproject.cfg
+.spyproject/
+.ropeproject/
+
+
+# -----------------------------------------------------------------------------
+# Jupyter
+# -----------------------------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb
+
+
+# -----------------------------------------------------------------------------
+# Documentation build output
+# -----------------------------------------------------------------------------
+docs/_build/
+site/
+
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+
+
+# -----------------------------------------------------------------------------
+# OS artifacts
+# -----------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+
+# -----------------------------------------------------------------------------
+# Temporary / scratch files
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+scratch/
+tmp/

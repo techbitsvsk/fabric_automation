@@ -1,0 +1,108 @@
+name: CI / CD — Fabric Control Plane
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: "."
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Required GitHub Secrets (set in repo Settings → Secrets → Actions):
+#   AZURE_CREDENTIALS        — output of: az ad sp create-for-rbac --sdk-auth
+#   AZURE_SUBSCRIPTION_ID
+#   AZURE_RESOURCE_GROUP     — RG where Function App is deployed
+#   AZURE_FUNCTIONAPP_NAME   — name of the Function App resource
+# Optional (for infra deploy step):
+#   SWAGGER_CLIENT_ID
+# ──────────────────────────────────────────────────────────────────────────────
+
+jobs:
+  # ── 1. Test ────────────────────────────────────────────────────────────────
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    env:
+      DEV_MODE: "true"
+      USE_AZURE_IDENTITY: "false"
+      AZURE_TENANT_ID: "00000000-0000-0000-0000-000000000000"
+      AZURE_CLIENT_ID: "00000000-0000-0000-0000-000000000000"
+      AZURE_CLIENT_SECRET: "dummy"
+      AZURE_SUBSCRIPTION_ID: "00000000-0000-0000-0000-000000000000"
+      AZURE_RESOURCE_GROUP: "rg-test"
+      SWAGGER_CLIENT_ID: "00000000-0000-0000-0000-000000000000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pytest
+        run: pytest -q --tb=short
+
+  # ── 2. Deploy infra (main branch only) ────────────────────────────────────
+  deploy-infra:
+    name: Deploy Azure infrastructure
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        uses: azure/arm-deploy@v2
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          template: ./infra/main.bicep
+          parameters: >
+            environment=prod
+            swaggerClientId=${{ secrets.SWAGGER_CLIENT_ID }}
+          failOnStdErr: false
+
+  # ── 3. Deploy function code (main branch only) ─────────────────────────────
+  deploy-app:
+    name: Deploy Function App code
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies into package
+        run: pip install --target=".python_packages/lib/site-packages" -r requirements.txt
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
