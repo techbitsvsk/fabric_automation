@@ -23,6 +23,7 @@
 15. [Monitoring Limitations](#monitoring-limitations)
 16. [Idempotency Model](#idempotency-model)
 17. [Role Mapping](#role-mapping)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -209,6 +210,8 @@ uvicorn app.main:app --reload --port 8000
 
 ## Running with Azure Functions Core Tools
 
+> **What is `func`?** Azure Functions Core Tools (`func`) is a local CLI that runs the full Azure Functions host on your machine. It lets you develop, debug, and test functions exactly as they behave in production — without deploying to Azure.
+
 This runs the exact same code path as production — the Functions host wraps FastAPI via `AsgiMiddleware`.
 
 ### Prerequisites
@@ -226,10 +229,30 @@ brew install azure-functions-core-tools@4
 func --version   # should print 4.x.x
 ```
 
+#### Azurite (local Azure Storage emulator)
+
+The Functions host requires a storage account — even locally — to manage internal state (triggers, locks, and host coordination). `AzureWebJobsStorage` in `local.settings.json` provides this connection. For local development, use **Azurite** instead of a real Azure Storage account.
+
+```bash
+# Install Azurite (once)
+npm install -g azurite
+
+# Start Azurite before running func start
+azurite --silent
+```
+
+Or use the VS Code command palette: **Azurite: Start** (requires the [Azure Storage extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestorage)).
+
+Then ensure `local.settings.json` has:
+
+```json
+"AzureWebJobsStorage": "UseDevelopmentStorage=true"
+```
+
 ### Start locally
 
 ```bash
-# Ensure local.settings.json has your values filled in, then:
+# Start Azurite first (see above), then:
 func start --python
 ```
 
@@ -675,3 +698,54 @@ Every operation is safe to re-run. Calling `POST /v1/fabric/workspace` twice wit
 | `group_data_product_owners` | Member |
 | `group_data_engineers` | Contributor |
 | `group_data_viewers` | Viewer |
+
+---
+
+## Troubleshooting
+
+### `func start` — Functions host reports unhealthy: `AzureWebJobsStorage`
+
+**Symptom:**
+
+```
+Process reporting unhealthy: azure.functions.webjobs.storage — Unhealthy.
+Description: "Unable to create client for AzureWebJobsStorage"
+```
+
+or
+
+```
+Description: "A timeout occurred while running check."
+```
+
+**Cause:** The Functions host requires a storage backend for internal coordination (trigger leases, host locks). `AzureWebJobsStorage` in `local.settings.json` is empty or pointing to Azurite when Azurite is not running.
+
+**Fix:**
+
+1. Ensure `local.settings.json` has:
+
+   ```json
+   "AzureWebJobsStorage": "UseDevelopmentStorage=true"
+   ```
+
+2. Start Azurite **before** running `func start`:
+
+   ```bash
+   azurite --silent
+   ```
+
+   Or via VS Code command palette: **Azurite: Start**.
+
+   If Azurite is not installed:
+
+   ```bash
+   npm install -g azurite
+   ```
+
+3. Then start the Functions host:
+
+   ```bash
+   func start --python
+   ```
+
+> **Note:** `UseDevelopmentStorage=true` only works locally with Azurite. In production (Azure), `AzureWebJobsStorage` is automatically set by the Functions runtime to the provisioned Storage Account connection string — you do not set this manually.
