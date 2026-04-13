@@ -1,0 +1,59 @@
+# ============================================================
+# TPC-DS Fabric Pipeline — Central Configuration
+# ============================================================
+#
+# SECURITY MODEL (fill in all sections):
+#   Identity  : Workspace MSI — no account keys in notebooks
+#   AuthZ     : Immuta data contracts → OneLake security plane
+#               → Purview DLP → Azure Storage RBAC (layered)
+#   Posture   : Wiz (central team, agentless, custom threat model)
+#   Governance: Purview Data Protection + Governance modules
+#   Item roles: Defined at item level (Lakehouse/notebook/pipeline)
+#               NOT default workspace roles
+# ============================================================
+
+azure:
+  tenant_id:        "YOUR_TENANT_ID"
+  subscription_id:  "YOUR_SUBSCRIPTION_ID"
+
+adls:
+  account_name:        "YOUR_ADLS_ACCOUNT_NAME"   # e.g. pocdataproduct1
+  raw_container:       "raw-zone"
+  raw_base_path:       "tpcds/tables"
+  prepared_container:  "prepared-zone"
+  prepared_base_path:  "tpcds/iceberg"
+  silver_base_path:    "tpcds/silver"
+  gold_base_path:      "tpcds/gold"
+  # NO account_key here — auth via workspace MSI through Immuta + OneLake security plane
+  raw_connection_id:      "YOUR_RAW_ADLS_CONNECTION_ID"      # Fabric portal → Manage connections
+  prepared_connection_id: "YOUR_PREPARED_ADLS_CONNECTION_ID"
+
+fabric:
+  workspace_id:   "YOUR_FABRIC_WORKSPACE_ID"
+  lakehouse_id:   "YOUR_FABRIC_LAKEHOUSE_ID"
+  lakehouse_name: "tpcds_lakehouse"
+  schema:         "dbo"   # created via Lakehouse UI
+
+  # Item-level role assignments (not default workspace roles)
+  # Set via: Fabric portal → item → Manage permissions → Add user/SPN
+  # Format: "object-id-of-principal": "role"
+  item_roles:
+    lakehouse:
+      reader_group:     "YOUR_READER_GROUP_OBJECT_ID"      # ReadAll (shortcuts visible)
+      writer_spn:       "YOUR_PIPELINE_MSI_OBJECT_ID"      # ReadWriteAll (notebooks write)
+      pbi_service:      "YOUR_PBI_SERVICE_PRINCIPAL_OID"   # ReadAll (Direct Lake)
+    notebooks:
+      runner_spn:       "YOUR_PIPELINE_MSI_OBJECT_ID"      # Execute
+    pipelines:
+      runner_spn:       "YOUR_PIPELINE_MSI_OBJECT_ID"      # Execute
+
+data_generation:
+  output_dir:  "./data/tpcds"
+  scale_gb:    5
+  seed:        42
+  chunk_size:  100_000
+
+pipeline:
+  transform_pipeline_name: "tpcds_transform_pipeline"
+  silver_notebook: "nb_02_silver_transform"
+  gold_notebook:   "nb_03_gold_curated"
